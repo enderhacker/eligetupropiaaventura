@@ -1,0 +1,1412 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LabDigital - Elige tu propia aventura [CREATOR]</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/cytoscape/3.28.1/cytoscape.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    <style>
+	/* Custom styles */
+
+.node-item {
+  padding: 14px;
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background: white;
+}
+
+.node-item:hover {
+  border-color: #7c3aed;
+  background-color: #faf5ff;
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(124, 58, 237, 0.1);
+}
+
+.node-item.active {
+  border-color: #7c3aed;
+  background-color: #ede9fe;
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.2);
+}
+
+.choice-item {
+  padding: 12px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  background-color: #f9fafb;
+  transition: all 0.2s;
+}
+
+.choice-item:hover {
+  border-color: #c7d2fe;
+  background-color: #eef2ff;
+}
+
+#graphContainer {
+  position: relative;
+  background: linear-gradient(135deg, #f9fafb 0%, #f3f4f6 100%);
+}
+
+.modal {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.6);
+  backdrop-filter: blur(4px);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease-out;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.modal-content {
+  background-color: white;
+  padding: 28px;
+  border-radius: 16px;
+  max-width: 600px;
+  width: 90%;
+  max-height: 85vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  animation: slideUp 0.3s ease-out;
+}
+
+@keyframes slideUp {
+  from {
+    transform: translateY(20px);
+    opacity: 0;
+  }
+  to {
+    transform: translateY(0);
+    opacity: 1;
+  }
+}
+
+.player-choice-btn {
+  width: 100%;
+  padding: 16px;
+  background-color: #7c3aed;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.player-choice-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+  transition: left 0.5s;
+}
+
+.player-choice-btn:hover::before {
+  left: 100%;
+}
+
+.player-choice-btn:hover {
+  background-color: #6d28d9;
+  transform: translateX(4px);
+  box-shadow: 0 4px 12px rgba(124, 58, 237, 0.3);
+}
+
+.player-choice-btn:active {
+  transform: translateX(2px);
+}
+
+@keyframes pulse-warning {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.7;
+  }
+}
+
+.node-item:has(.bg-yellow-100) {
+  animation: pulse-warning 2s infinite;
+}
+
+/* Added smooth transitions for auto-save indicator */
+#autoSaveIndicator {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Custom scrollbar for better aesthetics */
+::-webkit-scrollbar {
+  width: 8px;
+  height: 8px;
+}
+
+::-webkit-scrollbar-track {
+  background: #f1f1f1;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: #7c3aed;
+  border-radius: 4px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #6d28d9;
+}
+</style>
+</head>
+<body class="bg-gray-50 min-h-screen">
+    <header class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white shadow-lg">
+        <div class="container mx-auto px-4 py-6">
+            <h1 class="text-3xl font-bold text-center">LabDigital - Elige tu propia aventura [CREATOR]</h1>
+            <div class="text-center mt-2">
+                <span id="autoSaveIndicator" class="text-xs text-purple-200 opacity-0 transition-opacity">
+                    <i class="fas fa-check-circle mr-1"></i>Guardado automáticamente
+                </span>
+            </div>
+        </div>
+    </header>
+
+    <div id="creatorMode" class="container mx-auto px-4 py-6">
+        <div class="bg-white rounded-lg shadow-md p-4 mb-4 flex flex-wrap gap-3 items-center justify-between">
+            <div class="flex gap-2">
+                <button id="addNodeBtn" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded-lg transition-colors font-semibold">
+                    <i class="fas fa-plus mr-2"></i>Nuevo Nodo
+                </button>
+                <button id="testPlayBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors font-semibold">
+                    <i class="fas fa-play-circle mr-2"></i>Probar Juego
+                </button>
+            </div>
+            
+            <div class="flex gap-2">
+                <button id="undoBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Deshacer (Ctrl+Z)">
+                    <i class="fas fa-undo"></i>
+                </button>
+                <button id="redoBtn" class="bg-gray-200 hover:bg-gray-300 text-gray-700 px-3 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed" title="Rehacer (Ctrl+Y)">
+                    <i class="fas fa-redo"></i>
+                </button>
+                <button id="exportBtn" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-download mr-2"></i>Exportar
+                </button>
+                <button id="importBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-upload mr-2"></i>Importar
+                </button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-gradient-to-r from-purple-600 to-indigo-600 text-white p-4 flex justify-between items-center">
+                    <h2 class="text-lg font-bold">
+                        <i class="fas fa-project-diagram mr-2"></i>Mapa de Aventura
+                    </h2>
+                    <div class="flex gap-2">
+                        <button id="fitGraphBtn" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded transition-colors text-sm" title="Ajustar vista">
+                            <i class="fas fa-compress-arrows-alt"></i>
+                        </button>
+                        <button id="centerGraphBtn" class="bg-white/20 hover:bg-white/30 px-3 py-1 rounded transition-colors text-sm" title="Centrar">
+                            <i class="fas fa-crosshairs"></i>
+                        </button>
+                    </div>
+                </div>
+                <div id="graphContainer" class="bg-gray-50" style="height: 500px;"></div>
+                <div class="p-3 bg-gray-100 text-xs text-gray-600 border-t">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Haz clic en un nodo para editarlo. Usa la rueda del ratón para zoom.
+                </div>
+            </div>
+
+            <div class="bg-white rounded-lg shadow-md overflow-hidden">
+                <div class="bg-gradient-to-r from-indigo-600 to-purple-600 text-white p-4">
+                    <h2 class="text-lg font-bold">
+                        <i class="fas fa-edit mr-2"></i>Editor de Nodo
+                    </h2>
+                </div>
+
+                <div id="editorEmpty" class="text-center py-12 text-gray-400 p-6">
+                    <i class="fas fa-mouse-pointer text-4xl mb-4"></i>
+                    <p class="text-lg">Selecciona un nodo del mapa o crea uno nuevo</p>
+                </div>
+
+                <div id="editorContent" class="hidden p-6">
+                    <div class="flex justify-between items-center mb-4">
+                        <div class="flex items-center gap-2">
+                            <span class="text-sm font-semibold text-gray-600">ID:</span>
+                            <code id="nodeIdDisplay" class="bg-purple-100 text-purple-800 px-3 py-1 rounded font-mono text-sm"></code>
+                            <button id="renameNodeBtn" class="text-purple-600 hover:text-purple-700 px-2 py-1 text-sm" title="Renombrar ID">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                        </div>
+                        <div class="flex gap-2">
+                            <button id="duplicateNodeBtn" class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-2 rounded-lg transition-colors text-sm" title="Duplicar nodo">
+                                <i class="fas fa-copy mr-1"></i>Duplicar
+                            </button>
+                            <button id="deleteNodeBtn" class="bg-red-600 hover:bg-red-700 text-white px-3 py-2 rounded-lg transition-colors text-sm">
+                                <i class="fas fa-trash mr-1"></i>Eliminar
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded-lg">
+                        <label class="flex items-center gap-2 cursor-pointer">
+                            <input type="checkbox" id="startNodeCheckbox" class="w-5 h-5 text-green-600 rounded focus:ring-2 focus:ring-green-500">
+                            <span class="font-semibold text-green-800">
+                                <i class="fas fa-flag-checkered mr-1"></i>Nodo de inicio
+                            </span>
+                        </label>
+                        <p class="text-xs text-green-700 mt-1 ml-7">Este será el primer nodo de la aventura</p>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-semibold text-gray-700 mb-2">
+                            <i class="fas fa-book mr-1"></i>Texto de la Escena
+                        </label>
+                        <textarea id="nodeText" rows="6" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none" placeholder="Describe lo que sucede en esta escena..."></textarea>
+                        <div class="text-xs text-gray-500 mt-1">
+                            <span id="charCount">0</span> caracteres
+                        </div>
+                    </div>
+
+                    <div class="mb-4">
+                        <div class="flex justify-between items-center mb-3">
+                            <h3 class="text-sm font-semibold text-gray-700">
+                                <i class="fas fa-code-branch mr-1"></i>Opciones (<span id="choiceCount">0</span>)
+                            </h3>
+                            <button id="addChoiceBtn" class="bg-indigo-600 hover:bg-indigo-700 text-white px-3 py-1 rounded-lg transition-colors text-sm">
+                                <i class="fas fa-plus mr-1"></i>Añadir Opción
+                            </button>
+                        </div>
+                        <div id="choicesList" class="space-y-3 max-h-64 overflow-y-auto">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="bg-white rounded-lg shadow-md p-6 mt-6">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-lg font-bold text-gray-800">
+                    <i class="fas fa-list mr-2"></i>Lista de Nodos (<span id="nodeCountDisplay">0</span>)
+                </h2>
+                <input type="text" id="searchNodes" placeholder="Buscar nodos..." class="px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent w-64">
+            </div>
+            <div id="nodeList" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+            </div>
+        </div>
+    </div>
+
+    <div id="exportModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-download mr-2"></i>Exportar Aventura
+                </h3>
+                <button id="closeExportModalBtn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <div class="bg-gray-100 p-4 rounded-lg mb-4">
+                <p class="text-sm text-gray-700 mb-2">
+                    <i class="fas fa-info-circle mr-1"></i>
+                    Tu aventura ha sido comprimida y está lista para compartir.
+                </p>
+                <textarea id="exportedData" rows="6" class="w-full px-3 py-2 border border-gray-300 rounded-lg font-mono text-xs bg-white" readonly></textarea>
+            </div>
+            <div class="flex gap-3">
+                <button id="copyExportBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-3 rounded-lg transition-colors font-semibold">
+                    <i class="fas fa-copy mr-2"></i>Copiar
+                </button>
+                <button id="downloadExportBtn" class="flex-1 bg-green-600 hover:bg-green-700 text-white px-4 py-3 rounded-lg transition-colors font-semibold">
+                    <i class="fas fa-download mr-2"></i>Descargar
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <div id="importModal" class="modal hidden">
+        <div class="modal-content">
+            <div class="flex justify-between items-center mb-4">
+                <h3 class="text-xl font-bold text-gray-800">
+                    <i class="fas fa-upload mr-2"></i>Importar Aventura
+                </h3>
+                <button id="closeImportModalBtn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+            <p class="text-sm text-gray-600 mb-3">
+                <i class="fas fa-info-circle mr-1"></i>
+                Pega el código comprimido de tu aventura:
+            </p>
+            <textarea id="importJsonInput" rows="10" class="w-full px-4 py-2 border border-gray-300 rounded-lg mb-4 font-mono text-xs" placeholder="Pega el código comprimido aquí..."></textarea>
+            <div class="flex gap-3">
+                <button id="cancelImportBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors">Cancelar</button>
+                <button id="confirmImportBtn" class="flex-1 bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded-lg transition-colors">Importar</button>
+            </div>
+        </div>
+    </div>
+
+    <div id="testPlayModal" class="modal hidden">
+        <div class="modal-content" style="max-width: 800px;">
+            <div class="flex justify-between items-center mb-4 pb-4 border-b">
+                <div class="flex items-center gap-3">
+                    <h3 class="text-xl font-bold text-gray-800">
+                        <i class="fas fa-play-circle mr-2"></i>Modo Prueba
+                    </h3>
+                    <label class="flex items-center gap-2 text-sm bg-gray-900 text-white px-3 py-2 rounded-lg cursor-pointer hover:bg-gray-800 transition-colors">
+                        <input type="checkbox" id="debugModeToggle" class="w-4 h-4 text-green-600 rounded">
+                        <i class="fas fa-bug mr-1"></i>
+                        <span class="font-semibold">Debug</span>
+                    </label>
+                </div>
+                <button id="closeTestPlayBtn" class="text-gray-500 hover:text-gray-700">
+                    <i class="fas fa-times text-xl"></i>
+                </button>
+            </div>
+
+            <div id="debugPanel" class="hidden bg-gray-900 text-green-400 p-4 rounded-lg mb-4 font-mono text-sm">
+                <div class="flex justify-between items-center mb-3 pb-2 border-b border-gray-700">
+                    <span class="font-bold text-green-300"><i class="fas fa-bug mr-2"></i>DEBUG INFO</span>
+                    <span id="debugNodeId" class="text-yellow-300"></span>
+                </div>
+                <div class="space-y-2 text-xs">
+                    <div class="flex justify-between">
+                        <span>Nodos visitados:</span>
+                        <span id="debugVisitedCount" class="text-white font-bold">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Profundidad:</span>
+                        <span id="debugDepth" class="text-white font-bold">0</span>
+                    </div>
+                    <div class="flex justify-between">
+                        <span>Opciones disponibles:</span>
+                        <span id="debugChoicesCount" class="text-white font-bold">0</span>
+                    </div>
+                    <div class="mt-3 pt-2 border-t border-gray-700">
+                        <div class="text-gray-400 mb-1">Historial de navegación:</div>
+                        <div id="debugPath" class="text-cyan-300 text-xs break-all"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="bg-gray-50 rounded-lg p-6 mb-4 min-h-48">
+                <div id="testSceneText" class="text-lg text-gray-800 leading-relaxed mb-6"></div>
+                <div id="testChoicesContainer" class="space-y-3"></div>
+            </div>
+
+            <div class="flex gap-3">
+                <button id="testBackBtn" class="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 px-4 py-2 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    <i class="fas fa-arrow-left mr-2"></i>Atrás
+                </button>
+                <button id="testRestartBtn" class="flex-1 bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg transition-colors">
+                    <i class="fas fa-redo mr-2"></i>Reiniciar
+                </button>
+            </div>
+        </div>
+    </div>
+<script>
+// State Management
+let nodes = []
+let currentEditingNodeId = null
+let history = []
+let historyIndex = -1
+let hasUnsavedChanges = false
+let autoSaveTimer = null
+
+// Test Play State
+let testPlayData = null
+let testCurrentNodeId = null
+let testNavigationHistory = []
+let testDebugMode = false
+
+const cytoscape = window.cytoscape
+const Swal = window.Swal
+
+// Generate unique ID
+function generateId() {
+  return Date.now().toString(36) + Math.random().toString(36).substr(2)
+}
+
+function triggerAutoSave() {
+  hasUnsavedChanges = true
+
+  if (autoSaveTimer) {
+    clearTimeout(autoSaveTimer)
+  }
+
+  autoSaveTimer = setTimeout(() => {
+    saveToHistory()
+    showAutoSaveIndicator()
+    hasUnsavedChanges = false
+  }, 500) // Auto-save after 500ms of inactivity
+}
+
+function showAutoSaveIndicator() {
+  const indicator = document.getElementById("autoSaveIndicator")
+  indicator.style.opacity = "1"
+
+  setTimeout(() => {
+    indicator.style.opacity = "0"
+  }, 2000)
+}
+
+// Save state to history for undo/redo
+function saveToHistory() {
+  history = history.slice(0, historyIndex + 1)
+  history.push(JSON.parse(JSON.stringify(nodes)))
+  historyIndex++
+
+  if (history.length > 1000) {
+    history.shift()
+    historyIndex--
+  }
+
+  updateUndoRedoButtons()
+}
+
+// Undo
+function undo() {
+  if (historyIndex > 0) {
+    historyIndex--
+    nodes = JSON.parse(JSON.stringify(history[historyIndex]))
+    renderNodeList()
+    renderGraph()
+    if (currentEditingNodeId) {
+      const node = nodes.find((n) => n.id === currentEditingNodeId)
+      if (node) {
+        loadNodeIntoEditor(node)
+      } else {
+        clearEditor()
+      }
+    }
+    updateUndoRedoButtons()
+    showAutoSaveIndicator()
+  }
+}
+
+// Redo
+function redo() {
+  if (historyIndex < history.length - 1) {
+    historyIndex++
+    nodes = JSON.parse(JSON.stringify(history[historyIndex]))
+    renderNodeList()
+    renderGraph()
+    if (currentEditingNodeId) {
+      const node = nodes.find((n) => n.id === currentEditingNodeId)
+      if (node) {
+        loadNodeIntoEditor(node)
+      } else {
+        clearEditor()
+      }
+    }
+    updateUndoRedoButtons()
+    showAutoSaveIndicator()
+  }
+}
+
+// Update undo/redo button states
+function updateUndoRedoButtons() {
+  document.getElementById("undoBtn").disabled = historyIndex <= 0
+  document.getElementById("redoBtn").disabled = historyIndex >= history.length - 1
+}
+
+// Initialize with example data
+function initializeExample() {
+  nodes = [
+    {
+      id: "inicio",
+      text: "Despiertas en un bosque misterioso. El sol se filtra a través del denso dosel sobre ti. Ves dos caminos por delante.",
+      choices: [
+        { text: "Tomar el camino izquierdo hacia el bosque oscuro", targetId: "bosque-oscuro" },
+        { text: "Tomar el camino derecho hacia la luz", targetId: "camino-luz" },
+      ],
+      isStart: true,
+    },
+    {
+      id: "bosque-oscuro",
+      text: "El camino se vuelve más oscuro y escuchas sonidos extraños. De repente, encuentras un viejo cofre de madera cubierto de musgo.",
+      choices: [
+        { text: "Abrir el cofre", targetId: "tesoro" },
+        { text: "Dejarlo y seguir caminando", targetId: "continuar" },
+      ],
+    },
+    {
+      id: "camino-luz",
+      text: "Sigues la luz y emerges en un hermoso prado. A lo lejos, ves un pequeño pueblo.",
+      choices: [
+        { text: "Dirigirte al pueblo", targetId: "pueblo" },
+        { text: "Descansar en el prado", targetId: "descansar" },
+      ],
+    },
+    {
+      id: "tesoro",
+      text: "¡Dentro del cofre encuentras un amuleto brillante! Al recogerlo, sientes una oleada de poder. ¡Has encontrado el legendario Amuleto de Luz!",
+      choices: [],
+    },
+    {
+      id: "continuar",
+      text: "Continúas más profundo en el bosque y eventualmente encuentras la salida. La aventura continúa...",
+      choices: [],
+    },
+    {
+      id: "pueblo",
+      text: "Los aldeanos te dan una cálida bienvenida. Te ofrecen comida y refugio. ¡Has encontrado un nuevo hogar!",
+      choices: [],
+    },
+    {
+      id: "descansar",
+      text: "Descansas pacíficamente en el prado. Mientras el sol se pone, te sientes contento y en paz.",
+      choices: [],
+    },
+  ]
+  saveToHistory()
+  renderNodeList()
+  renderGraph()
+  hasUnsavedChanges = false
+}
+
+// Render node list
+function renderNodeList() {
+  const nodeList = document.getElementById("nodeList")
+  nodeList.innerHTML = ""
+
+  document.getElementById("nodeCountDisplay").textContent = nodes.length
+
+  if (nodes.length === 0) {
+    nodeList.innerHTML =
+      '<p class="text-gray-400 text-center py-4 col-span-full">No hay nodos. ¡Crea uno para empezar!</p>'
+    return
+  }
+
+  const searchTerm = document.getElementById("searchNodes")?.value.toLowerCase() || ""
+  const filteredNodes = searchTerm
+    ? nodes.filter((n) => n.id.toLowerCase().includes(searchTerm) || n.text.toLowerCase().includes(searchTerm))
+    : nodes
+
+  filteredNodes.forEach((node) => {
+    const nodeItem = document.createElement("div")
+    nodeItem.className = "node-item"
+    if (node.id === currentEditingNodeId) {
+      nodeItem.classList.add("active")
+    }
+
+    const preview = node.text.substring(0, 60) + (node.text.length > 60 ? "..." : "")
+    const isStart = node.isStart === true
+    const isEnd = node.choices.length === 0
+    const hasOrphanChoices = node.choices.some((c) => !c.targetId || !nodes.find((n) => n.id === c.targetId))
+
+    nodeItem.innerHTML = `
+      <div class="flex items-start justify-between mb-2 flex-wrap gap-2">
+        <code class="text-xs font-bold text-purple-700 bg-purple-100 px-2 py-1 rounded">${node.id}</code>
+        <div class="flex gap-1">
+          ${isStart ? '<span class="text-xs bg-green-100 text-green-700 px-2 py-1 rounded font-semibold">INICIO</span>' : ""}
+          ${isEnd ? '<span class="text-xs bg-red-100 text-red-700 px-2 py-1 rounded font-semibold">FIN</span>' : ""}
+          ${hasOrphanChoices ? '<span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-1 rounded font-semibold">⚠️</span>' : ""}
+        </div>
+      </div>
+      <div class="text-sm text-gray-600 mb-2">${preview || "Nodo vacío"}</div>
+      <div class="flex items-center gap-3 text-xs text-gray-500">
+        <span><i class="fas fa-code-branch mr-1"></i>${node.choices.length} opción(es)</span>
+        <span><i class="fas fa-font mr-1"></i>${node.text.length} caracteres</span>
+      </div>
+    `
+
+    nodeItem.addEventListener("click", () => {
+      currentEditingNodeId = node.id
+      loadNodeIntoEditor(node)
+      renderNodeList()
+      updateGraphSelection()
+    })
+
+    nodeList.appendChild(nodeItem)
+  })
+}
+
+// Load node into editor
+function loadNodeIntoEditor(node) {
+  document.getElementById("editorEmpty").classList.add("hidden")
+  document.getElementById("editorContent").classList.remove("hidden")
+
+  document.getElementById("nodeIdDisplay").textContent = node.id
+  const textArea = document.getElementById("nodeText")
+  textArea.value = node.text
+
+  document.getElementById("startNodeCheckbox").checked = node.isStart === true
+
+  updateCharCount()
+  renderChoicesList(node.choices)
+}
+
+// Clear editor
+function clearEditor() {
+  currentEditingNodeId = null
+  document.getElementById("editorEmpty").classList.remove("hidden")
+  document.getElementById("editorContent").classList.add("hidden")
+  renderNodeList()
+  updateGraphSelection()
+}
+
+// Render choices list
+function renderChoicesList(choices) {
+  const choicesList = document.getElementById("choicesList")
+  choicesList.innerHTML = ""
+
+  document.getElementById("choiceCount").textContent = choices.length
+
+  if (choices.length === 0) {
+    choicesList.innerHTML =
+      '<p class="text-gray-400 text-center py-4 text-sm">Sin opciones. ¡Añade una para crear ramificaciones!</p>'
+    return
+  }
+
+  choices.forEach((choice, index) => {
+    const choiceItem = document.createElement("div")
+    choiceItem.className = "choice-item"
+
+    choiceItem.innerHTML = `
+      <div class="flex items-center gap-2 mb-2">
+        <span class="bg-indigo-100 text-indigo-700 px-2 py-1 rounded text-xs font-bold">#${index + 1}</span>
+        <input type="text" class="flex-1 px-3 py-2 border border-gray-300 rounded-lg choice-text text-sm" value="${choice.text}" placeholder="Texto de la opción...">
+        <button class="bg-red-500 hover:bg-red-600 text-white px-3 py-2 rounded-lg transition-colors delete-choice-btn">
+          <i class="fas fa-trash"></i>
+        </button>
+      </div>
+      <div class="flex items-center gap-2">
+        <i class="fas fa-arrow-right text-gray-400"></i>
+        <select class="flex-1 px-3 py-2 border border-gray-300 rounded-lg choice-target text-sm">
+          <option value="">-- Seleccionar nodo destino --</option>
+          ${nodes.map((n) => `<option value="${n.id}" ${n.id === choice.targetId ? "selected" : ""}>${n.id}</option>`).join("")}
+        </select>
+      </div>
+    `
+
+    choiceItem.querySelector(".choice-text").addEventListener("input", () => {
+      autoSaveCurrentNode()
+    })
+
+    choiceItem.querySelector(".choice-target").addEventListener("change", () => {
+      autoSaveCurrentNode()
+    })
+
+    choiceItem.querySelector(".delete-choice-btn").addEventListener("click", () => {
+      choices.splice(index, 1)
+      renderChoicesList(choices)
+      triggerAutoSave()
+      renderNodeList()
+      renderGraph()
+    })
+
+    choicesList.appendChild(choiceItem)
+  })
+}
+
+function autoSaveCurrentNode() {
+  const node = nodes.find((n) => n.id === currentEditingNodeId)
+  if (!node) return
+
+  node.text = document.getElementById("nodeText").value
+
+  const isStartChecked = document.getElementById("startNodeCheckbox").checked
+  if (isStartChecked) {
+    nodes.forEach((n) => {
+      n.isStart = false
+    })
+    node.isStart = true
+  } else {
+    node.isStart = false
+  }
+
+  const choiceItems = document.querySelectorAll(".choice-item")
+  node.choices = []
+
+  choiceItems.forEach((item) => {
+    const text = item.querySelector(".choice-text").value
+    const targetId = item.querySelector(".choice-target").value
+    if (text.trim()) {
+      node.choices.push({ text, targetId })
+    }
+  })
+
+  triggerAutoSave()
+  renderNodeList()
+  renderGraph()
+}
+
+// Add new node
+function addNode() {
+  const newNode = {
+    id: generateId(),
+    text: "",
+    choices: [],
+    isStart: false,
+  }
+
+  nodes.push(newNode)
+  triggerAutoSave()
+  currentEditingNodeId = newNode.id
+  loadNodeIntoEditor(newNode)
+  renderNodeList()
+  renderGraph()
+}
+
+// Add new choice
+function addChoice() {
+  const node = nodes.find((n) => n.id === currentEditingNodeId)
+  if (node) {
+    node.choices.push({ text: "", targetId: "" })
+    renderChoicesList(node.choices)
+    triggerAutoSave()
+  }
+}
+
+async function deleteNode() {
+  if (!currentEditingNodeId) return
+
+  const result = await Swal.fire({
+    title: "¿Eliminar nodo?",
+    text: "Esta acción no se puede deshacer",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonColor: "#ef4444",
+    cancelButtonColor: "#6b7280",
+    confirmButtonText: "Sí, eliminar",
+    cancelButtonText: "Cancelar",
+  })
+
+  if (result.isConfirmed) {
+    nodes = nodes.filter((n) => n.id !== currentEditingNodeId)
+    triggerAutoSave()
+    clearEditor()
+    renderGraph()
+
+    Swal.fire({
+      title: "¡Eliminado!",
+      text: "El nodo ha sido eliminado",
+      icon: "success",
+      timer: 1500,
+      showConfirmButton: false,
+    })
+  }
+}
+
+async function renameNodeId() {
+  if (!currentEditingNodeId) return
+
+  const node = nodes.find((n) => n.id === currentEditingNodeId)
+  if (!node) return
+
+  const { value: newId } = await Swal.fire({
+    title: "Renombrar ID del nodo",
+    input: "text",
+    inputLabel: "Nuevo ID",
+    inputValue: node.id,
+    showCancelButton: true,
+    confirmButtonText: "Renombrar",
+    cancelButtonText: "Cancelar",
+    inputValidator: (value) => {
+      if (!value) {
+        return "El ID no puede estar vacío"
+      }
+      if (value === node.id) {
+        return "El nuevo ID debe ser diferente"
+      }
+      if (nodes.some((n) => n.id === value)) {
+        return "Ya existe un nodo con este ID"
+      }
+      if (!/^[a-zA-Z0-9_-]+$/.test(value)) {
+        return "El ID solo puede contener letras, números, guiones y guiones bajos"
+      }
+    },
+  })
+
+  if (newId) {
+    const oldId = node.id
+    node.id = newId
+
+    // Update all references to this node
+    nodes.forEach((n) => {
+      n.choices.forEach((c) => {
+        if (c.targetId === oldId) {
+          c.targetId = newId
+        }
+      })
+    })
+
+    currentEditingNodeId = newId
+    triggerAutoSave()
+    loadNodeIntoEditor(node)
+    renderNodeList()
+    renderGraph()
+
+    Swal.fire({
+      title: "¡Renombrado!",
+      text: `ID cambiado a "${newId}"`,
+      icon: "success",
+      timer: 1500,
+      showConfirmButton: false,
+    })
+  }
+}
+
+// Export JSON
+function exportJSON() {
+  try {
+    const data = { nodes }
+    const json = JSON.stringify(data)
+    const compressed = LZString.compressToBase64(json)
+
+    document.getElementById("exportedData").value = compressed
+    document.getElementById("exportModal").classList.remove("hidden")
+  } catch (error) {
+    Swal.fire({
+      title: "Error al exportar",
+      text: error.message,
+      icon: "error",
+    })
+  }
+}
+
+// Copy export function
+async function copyExport() {
+  const exportedData = document.getElementById("exportedData")
+
+  try {
+    await navigator.clipboard.writeText(exportedData.value)
+
+    Swal.fire({
+      title: "¡Copiado!",
+      text: "El código ha sido copiado al portapapeles",
+      icon: "success",
+      timer: 1500,
+      showConfirmButton: false,
+    })
+  } catch (error) {
+    // Fallback for older browsers
+    exportedData.select()
+    document.execCommand("copy")
+
+    Swal.fire({
+      title: "¡Copiado!",
+      text: "El código ha sido copiado al portapapeles",
+      icon: "success",
+      timer: 1500,
+      showConfirmButton: false,
+    })
+  }
+}
+
+// Download export function
+function downloadExport() {
+  try {
+    const compressed = document.getElementById("exportedData").value
+    const blob = new Blob([compressed], { type: "text/plain" })
+    const url = URL.createObjectURL(blob)
+    const a = document.createElement("a")
+    a.href = url
+    a.download = "aventura-labdigital.txt"
+    a.click()
+    URL.revokeObjectURL(url)
+
+    Swal.fire({
+      title: "¡Descargado!",
+      text: "El archivo ha sido descargado",
+      icon: "success",
+      timer: 1500,
+      showConfirmButton: false,
+    })
+  } catch (error) {
+    Swal.fire({
+      title: "Error al descargar",
+      text: error.message,
+      icon: "error",
+    })
+  }
+}
+
+async function importJSON(compressedString) {
+  try {
+    let jsonString
+    try {
+      jsonString = LZString.decompressFromBase64(compressedString)
+      if (!jsonString) {
+        jsonString = compressedString
+      }
+    } catch (e) {
+      jsonString = compressedString
+    }
+
+    const data = JSON.parse(jsonString)
+    if (!data.nodes || !Array.isArray(data.nodes)) {
+      throw new Error("Formato inválido: no se encontró el array de nodos")
+    }
+
+    if (!data.nodes.some((n) => n.isStart)) {
+      if (data.nodes.length > 0) {
+        data.nodes[0].isStart = true
+      }
+    }
+
+    nodes = data.nodes
+    saveToHistory()
+    clearEditor()
+    renderGraph()
+    hasUnsavedChanges = false
+
+    await Swal.fire({
+      title: "¡Importado!",
+      text: `Se importaron ${nodes.length} nodos exitosamente`,
+      icon: "success",
+      timer: 2000,
+      showConfirmButton: false,
+    })
+  } catch (error) {
+    await Swal.fire({
+      title: "Error al importar",
+      text: error.message,
+      icon: "error",
+    })
+  }
+}
+
+// Test Play Functions
+function openTestPlay() {
+  if (nodes.length === 0) {
+    Swal.fire({
+      title: "No hay nodos",
+      text: "Crea al menos un nodo antes de probar el juego",
+      icon: "warning",
+    })
+    return
+  }
+
+  const startNode = nodes.find((n) => n.isStart) || nodes[0]
+
+  testPlayData = { nodes: JSON.parse(JSON.stringify(nodes)) }
+  testCurrentNodeId = startNode.id
+  testNavigationHistory = [testCurrentNodeId]
+  testDebugMode = false
+
+  document.getElementById("testPlayModal").classList.remove("hidden")
+  document.getElementById("debugModeToggle").checked = false
+  document.getElementById("debugPanel").classList.add("hidden")
+
+  displayTestNode()
+}
+
+function displayTestNode() {
+  const node = testPlayData.nodes.find((n) => n.id === testCurrentNodeId)
+  if (!node) {
+    document.getElementById("testSceneText").innerHTML = '<p class="text-red-600">Error: ¡Nodo no encontrado!</p>'
+    return
+  }
+
+  document.getElementById("testSceneText").textContent = node.text
+
+  const choicesContainer = document.getElementById("testChoicesContainer")
+  choicesContainer.innerHTML = ""
+
+  if (node.choices.length === 0) {
+    choicesContainer.innerHTML =
+      '<p class="text-gray-400 text-center py-6 italic text-lg"><i class="fas fa-flag-checkered mr-2"></i>Fin de la historia</p>'
+  } else {
+    node.choices.forEach((choice) => {
+      const button = document.createElement("button")
+      button.className = "player-choice-btn"
+
+      if (testDebugMode && choice.targetId) {
+        button.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span><i class="fas fa-arrow-right mr-2"></i>${choice.text}</span>
+            <code class="text-xs bg-white/20 px-2 py-1 rounded">→ ${choice.targetId}</code>
+          </div>
+        `
+      } else {
+        button.innerHTML = `<i class="fas fa-arrow-right mr-2"></i>${choice.text}`
+      }
+
+      button.addEventListener("click", () => makeTestChoice(choice.targetId))
+      choicesContainer.appendChild(button)
+    })
+  }
+
+  document.getElementById("testBackBtn").disabled = testNavigationHistory.length <= 1
+
+  if (testDebugMode) {
+    updateDebugInfo(node)
+  }
+}
+
+async function makeTestChoice(targetId) {
+  if (!targetId) {
+    await Swal.fire({
+      title: "Opción sin destino",
+      text: "Esta opción no tiene un nodo destino configurado",
+      icon: "warning",
+    })
+    return
+  }
+
+  const targetNode = testPlayData.nodes.find((n) => n.id === targetId)
+  if (!targetNode) {
+    await Swal.fire({
+      title: "Nodo no encontrado",
+      text: `El nodo "${targetId}" no existe`,
+      icon: "error",
+    })
+    return
+  }
+
+  testCurrentNodeId = targetId
+  testNavigationHistory.push(targetId)
+  displayTestNode()
+}
+
+function toggleDebugMode() {
+  testDebugMode = document.getElementById("debugModeToggle").checked
+  const debugPanel = document.getElementById("debugPanel")
+
+  if (testDebugMode) {
+    debugPanel.classList.remove("hidden")
+    const node = testPlayData.nodes.find((n) => n.id === testCurrentNodeId)
+    if (node) updateDebugInfo(node)
+  } else {
+    debugPanel.classList.add("hidden")
+  }
+
+  displayTestNode()
+}
+
+function updateDebugInfo(node) {
+  document.getElementById("debugNodeId").textContent = `ID: ${node.id}`
+  document.getElementById("debugVisitedCount").textContent = new Set(testNavigationHistory).size
+  document.getElementById("debugDepth").textContent = testNavigationHistory.length - 1
+  document.getElementById("debugChoicesCount").textContent = node.choices.length
+
+  const pathHistory = testNavigationHistory.join(" → ")
+  document.getElementById("debugPath").textContent = pathHistory
+}
+
+function goTestBack() {
+  if (testNavigationHistory.length > 1) {
+    testNavigationHistory.pop()
+    testCurrentNodeId = testNavigationHistory[testNavigationHistory.length - 1]
+    displayTestNode()
+  }
+}
+
+function restartTest() {
+  const startNode = testPlayData.nodes.find((n) => n.isStart) || testPlayData.nodes[0]
+  testCurrentNodeId = startNode.id
+  testNavigationHistory = [testCurrentNodeId]
+  displayTestNode()
+}
+
+// Node Duplication Feature
+function duplicateNode() {
+  if (!currentEditingNodeId) return
+
+  const node = nodes.find((n) => n.id === currentEditingNodeId)
+  if (!node) return
+
+  const newNode = {
+    id: generateId(),
+    text: node.text,
+    choices: JSON.parse(JSON.stringify(node.choices)),
+    isStart: false,
+  }
+
+  nodes.push(newNode)
+  triggerAutoSave()
+  currentEditingNodeId = newNode.id
+  loadNodeIntoEditor(newNode)
+  renderNodeList()
+  renderGraph()
+
+  Swal.fire({
+    title: "¡Duplicado!",
+    text: "El nodo ha sido duplicado",
+    icon: "success",
+    timer: 1500,
+    showConfirmButton: false,
+  })
+}
+
+// Graph Functions
+let cy = null
+
+function renderGraph() {
+  if (!cy) {
+    cy = cytoscape({
+      container: document.getElementById("graphContainer"),
+      style: [
+        {
+          selector: "node",
+          style: {
+            "background-color": "#7c3aed",
+            label: "data(label)",
+            color: "#fff",
+            "text-valign": "center",
+            "text-halign": "center",
+            "font-size": "12px",
+            "font-weight": "bold",
+            width: "60px",
+            height: "60px",
+            "text-wrap": "wrap",
+            "text-max-width": "50px",
+            "border-width": 3,
+            "border-color": "#5b21b6",
+          },
+        },
+        {
+          selector: "node.start",
+          style: {
+            "background-color": "#10b981",
+            "border-color": "#059669",
+          },
+        },
+        {
+          selector: "node.end",
+          style: {
+            "background-color": "#ef4444",
+            "border-color": "#dc2626",
+          },
+        },
+        {
+          selector: "node.selected",
+          style: {
+            "border-width": 5,
+            "border-color": "#fbbf24",
+          },
+        },
+        {
+          selector: "edge",
+          style: {
+            width: 3,
+            "line-color": "#a78bfa",
+            "target-arrow-color": "#a78bfa",
+            "target-arrow-shape": "triangle",
+            "curve-style": "bezier",
+            "arrow-scale": 1.5,
+          },
+        },
+      ],
+      layout: {
+        name: "breadthfirst",
+        directed: true,
+        padding: 50,
+        spacingFactor: 1.5,
+      },
+    })
+
+    cy.on("tap", "node", (evt) => {
+      const nodeId = evt.target.id()
+      const node = nodes.find((n) => n.id === nodeId)
+      if (node) {
+        currentEditingNodeId = nodeId
+        loadNodeIntoEditor(node)
+        updateGraphSelection()
+      }
+    })
+  }
+
+  cy.elements().remove()
+
+  const elements = []
+
+  nodes.forEach((node) => {
+    const isStart = node.isStart === true
+    const isEnd = node.choices.length === 0
+    const classes = []
+    if (isStart) classes.push("start")
+    if (isEnd) classes.push("end")
+    if (node.id === currentEditingNodeId) classes.push("selected")
+
+    elements.push({
+      data: {
+        id: node.id,
+        label: node.id.length > 10 ? node.id.substring(0, 10) + "..." : node.id,
+      },
+      classes: classes.join(" "),
+    })
+  })
+
+  nodes.forEach((node) => {
+    node.choices.forEach((choice) => {
+      if (choice.targetId) {
+        elements.push({
+          data: {
+            source: node.id,
+            target: choice.targetId,
+          },
+        })
+      }
+    })
+  })
+
+  cy.add(elements)
+  cy.layout({
+    name: "breadthfirst",
+    directed: true,
+    padding: 50,
+    spacingFactor: 1.5,
+    avoidOverlap: true,
+  }).run()
+}
+
+function updateGraphSelection() {
+  if (!cy) return
+
+  cy.nodes().removeClass("selected")
+  if (currentEditingNodeId) {
+    cy.getElementById(currentEditingNodeId).addClass("selected")
+  }
+}
+
+// Character Counter Function
+function updateCharCount() {
+  const textArea = document.getElementById("nodeText")
+  const charCount = document.getElementById("charCount")
+  if (textArea && charCount) {
+    charCount.textContent = textArea.value.length
+  }
+}
+
+function handleKeyboardShortcuts(e) {
+  if (e.ctrlKey || e.metaKey) {
+    if (e.key === "z" && !e.shiftKey) {
+      e.preventDefault()
+      undo()
+    } else if (e.key === "y" || (e.key === "z" && e.shiftKey)) {
+      e.preventDefault()
+      redo()
+    } else if (e.key === "s") {
+      e.preventDefault()
+      // Already auto-saving, just show indicator
+      showAutoSaveIndicator()
+    }
+  }
+}
+
+window.addEventListener("beforeunload", (e) => {
+  if (hasUnsavedChanges) {
+    e.preventDefault()
+    e.returnValue = "¿Estás seguro de que quieres salir? Hay cambios sin guardar."
+    return e.returnValue
+  }
+})
+
+// Event Listeners
+document.addEventListener("DOMContentLoaded", () => {
+  initializeExample()
+
+  document.addEventListener("keydown", handleKeyboardShortcuts)
+
+  document.getElementById("addNodeBtn").addEventListener("click", addNode)
+  document.getElementById("addChoiceBtn").addEventListener("click", addChoice)
+  document.getElementById("deleteNodeBtn").addEventListener("click", deleteNode)
+
+  document.getElementById("renameNodeBtn").addEventListener("click", renameNodeId)
+  document.getElementById("duplicateNodeBtn").addEventListener("click", duplicateNode)
+
+  document.getElementById("exportBtn").addEventListener("click", exportJSON)
+  document.getElementById("undoBtn").addEventListener("click", undo)
+  document.getElementById("redoBtn").addEventListener("click", redo)
+
+  document.getElementById("nodeText").addEventListener("input", () => {
+    updateCharCount()
+    autoSaveCurrentNode()
+  })
+
+  document.getElementById("startNodeCheckbox").addEventListener("change", autoSaveCurrentNode)
+
+  document.getElementById("searchNodes").addEventListener("input", renderNodeList)
+
+  document.getElementById("fitGraphBtn").addEventListener("click", () => {
+    if (cy) cy.fit(50)
+  })
+
+  document.getElementById("centerGraphBtn").addEventListener("click", () => {
+    if (cy) cy.center()
+  })
+
+  document.getElementById("testPlayBtn").addEventListener("click", openTestPlay)
+
+  document.getElementById("closeTestPlayBtn").addEventListener("click", () => {
+    document.getElementById("testPlayModal").classList.add("hidden")
+  })
+
+  document.getElementById("testBackBtn").addEventListener("click", goTestBack)
+  document.getElementById("testRestartBtn").addEventListener("click", restartTest)
+  document.getElementById("debugModeToggle").addEventListener("change", toggleDebugMode)
+
+  document.getElementById("closeExportModalBtn").addEventListener("click", () => {
+    document.getElementById("exportModal").classList.add("hidden")
+  })
+
+  document.getElementById("copyExportBtn").addEventListener("click", copyExport)
+  document.getElementById("downloadExportBtn").addEventListener("click", downloadExport)
+
+  document.getElementById("importBtn").addEventListener("click", () => {
+    document.getElementById("importModal").classList.remove("hidden")
+  })
+
+  document.getElementById("closeImportModalBtn").addEventListener("click", () => {
+    document.getElementById("importModal").classList.add("hidden")
+  })
+
+  document.getElementById("cancelImportBtn").addEventListener("click", () => {
+    document.getElementById("importModal").classList.add("hidden")
+  })
+
+  document.getElementById("confirmImportBtn").addEventListener("click", () => {
+    const jsonInput = document.getElementById("importJsonInput").value
+    importJSON(jsonInput)
+    document.getElementById("importModal").classList.add("hidden")
+    document.getElementById("importJsonInput").value = ""
+  })
+
+  document.getElementById("testPlayModal").addEventListener("click", (e) => {
+    if (e.target.id === "testPlayModal") {
+      e.stopPropagation()
+    }
+  })
+
+  document.getElementById("exportModal").addEventListener("click", (e) => {
+    if (e.target.id === "exportModal") {
+      document.getElementById("exportModal").classList.add("hidden")
+    }
+  })
+
+  document.getElementById("importModal").addEventListener("click", (e) => {
+    if (e.target.id === "importModal") {
+      document.getElementById("importModal").classList.add("hidden")
+    }
+  })
+})
+</script>
+</body>
+</html>

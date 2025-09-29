@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LabDigital - Elige tu propia aventura [PLAYER]</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lz-string/1.5.0/lz-string.min.js"></script>
+    <style>
+        /* Custom Styles for Player */
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  transition: all 0.3s ease;
+}
+
+body {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+}
+
+/* Buttons */
+.btn-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  color: white;
+  border: none;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 6px rgba(124, 58, 237, 0.2);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 12px rgba(124, 58, 237, 0.3);
+}
+
+.btn-primary:active {
+  transform: translateY(0);
+}
+
+.btn-secondary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: white;
+  color: #6b7280;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.75rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-secondary:hover {
+  background: #f9fafb;
+  border-color: #d1d5db;
+  color: #374151;
+}
+
+/* Choice Buttons */
+.choice-btn {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 1rem;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  text-align: left;
+  position: relative;
+  overflow: hidden;
+}
+
+.choice-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 0;
+  height: 100%;
+  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  transition: width 0.3s ease;
+  z-index: 0;
+}
+
+.choice-btn:hover::before {
+  width: 100%;
+}
+
+.choice-btn:hover {
+  border-color: #7c3aed;
+  transform: translateX(8px);
+  box-shadow: 0 8px 16px rgba(124, 58, 237, 0.2);
+}
+
+.choice-btn:hover .choice-number,
+.choice-btn:hover .choice-text,
+.choice-btn:hover .choice-arrow {
+  color: white;
+  z-index: 1;
+}
+
+.choice-number {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: linear-gradient(135deg, #7c3aed 0%, #6366f1 100%);
+  color: white;
+  border-radius: 0.5rem;
+  font-weight: bold;
+  font-size: 0.875rem;
+  flex-shrink: 0;
+  z-index: 1;
+  position: relative;
+}
+
+.choice-text {
+  flex: 1;
+  color: #1f2937;
+  font-weight: 500;
+  font-size: 1rem;
+  line-height: 1.5;
+  z-index: 1;
+  position: relative;
+}
+
+.choice-arrow {
+  color: #9ca3af;
+  font-size: 1.25rem;
+  transition: all 0.3s ease;
+  z-index: 1;
+  position: relative;
+}
+
+.choice-btn:hover .choice-arrow {
+  transform: translateX(4px);
+}
+
+/* Story Text */
+#storyText {
+  font-size: 1.125rem;
+  line-height: 1.8;
+  color: #374151;
+}
+
+/* Prose Styles */
+.prose {
+  max-width: none;
+}
+
+.prose p {
+  margin-bottom: 1rem;
+}
+
+.prose p:last-child {
+  margin-bottom: 0;
+}
+
+/* SweetAlert2 Custom Styles */
+.swal2-popup {
+  border-radius: 1rem;
+  padding: 2rem;
+}
+
+.swal2-title {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: #1f2937;
+}
+
+.swal2-html-container {
+  color: #6b7280;
+}
+
+.swal2-textarea {
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 0.75rem;
+  font-size: 0.875rem;
+  resize: vertical;
+}
+
+.swal2-textarea:focus {
+  border-color: #7c3aed;
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(124, 58, 237, 0.1);
+}
+
+/* Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+#gameScreen {
+  animation: fadeIn 0.5s ease;
+}
+
+.choice-btn {
+  animation: fadeIn 0.3s ease backwards;
+}
+
+.choice-btn:nth-child(1) {
+  animation-delay: 0.1s;
+}
+.choice-btn:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.choice-btn:nth-child(3) {
+  animation-delay: 0.3s;
+}
+.choice-btn:nth-child(4) {
+  animation-delay: 0.4s;
+}
+.choice-btn:nth-child(5) {
+  animation-delay: 0.5s;
+}
+
+/* Responsive */
+@media (max-width: 640px) {
+  .choice-btn {
+    padding: 1rem;
+    gap: 0.75rem;
+  }
+
+  .choice-text {
+    font-size: 0.9375rem;
+  }
+
+  #storyText {
+    font-size: 1rem;
+  }
+}
+
+/* Loading Animation */
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.loading {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+    </style>
+</head>
+<body class="bg-gradient-to-br from-purple-50 to-indigo-100 min-h-screen">
+    
+    <header class="bg-white shadow-md sticky top-0 z-50">
+        <div class="container mx-auto px-4 py-4">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center gap-3">
+                    <i class="fas fa-book-open text-3xl text-purple-600"></i>
+                    <div>
+                        <h1 class="text-2xl font-bold text-gray-800">LabDigital - Elige tu propia aventura [PLAYER]</h1>
+                    </div>
+                </div>
+                
+                <div class="flex items-center gap-2">
+                    <button id="backBtn" class="btn-secondary" style="display: none;">
+                        <i class="fas fa-arrow-left"></i>
+                        <span class="hidden sm:inline">Atrás</span>
+                    </button>
+                    <button id="restartBtn" class="btn-secondary" style="display: none;">
+                        <i class="fas fa-redo"></i>
+                        <span class="hidden sm:inline">Reiniciar</span>
+                    </button>
+                    <button id="loadNewBtn" class="btn-primary">
+                        <i class="fas fa-upload"></i>
+                        <span class="hidden sm:inline">Cargar Aventura</span>
+                    </button>
+                </div>
+            </div>
+        </div>
+    </header>
+
+    <main class="container mx-auto px-4 py-8">
+        
+        <div id="welcomeScreen" class="max-w-2xl mx-auto">
+            <div class="bg-white rounded-2xl shadow-xl p-8 text-center">
+                <div class="mb-6">
+                    <i class="fas fa-book-reader text-6xl text-purple-600 mb-4"></i>
+                    <h2 class="text-3xl font-bold text-gray-800 mb-2">Bienvenido</h2>
+                    <p class="text-gray-600">Carga una aventura para comenzar tu historia</p>
+                </div>
+                
+                <div class="space-y-4">
+                    <button id="loadAdventureBtn" class="btn-primary w-full py-4 text-lg">
+                        <i class="fas fa-upload mr-2"></i>
+                        Cargar Aventura
+                    </button>
+                    
+                    <div class="text-sm text-gray-500">
+                        <p>Pega el código de aventura exportado desde el creador</p>
+                    </div>
+                </div>
+                
+                <div class="mt-8 p-4 bg-purple-50 rounded-lg">
+                    <h3 class="font-semibold text-gray-800 mb-2">
+                        <i class="fas fa-info-circle text-purple-600 mr-2"></i>
+                        ¿Cómo funciona?
+                    </h3>
+                    <ul class="text-sm text-gray-600 text-left space-y-1">
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Carga el código de aventura comprimido</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Lee la historia y toma decisiones</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Navega hacia atrás si quieres cambiar tu elección</li>
+                        <li><i class="fas fa-check text-green-500 mr-2"></i>Reinicia cuando quieras empezar de nuevo</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <div id="gameScreen" class="max-w-3xl mx-auto" style="display: none;">
+            
+            <div id="adventureTitle" class="bg-white rounded-xl shadow-lg p-6 mb-6 text-center">
+                <h2 class="text-2xl font-bold text-gray-800"></h2>
+            </div>
+            
+            <div class="bg-white rounded-2xl shadow-xl p-8 mb-6">
+                <div id="storyText" class="prose prose-lg max-w-none text-gray-800 leading-relaxed mb-6">
+                </div>
+                
+                <div id="choicesContainer" class="space-y-3">
+                </div>
+                
+                <div id="endMessage" class="text-center py-8" style="display: none;">
+                    <i class="fas fa-flag-checkered text-5xl text-purple-600 mb-4"></i>
+                    <h3 class="text-2xl font-bold text-gray-800 mb-2">Fin de la Historia</h3>
+                    <p class="text-gray-600 mb-6">Has llegado al final de esta aventura</p>
+                    <button id="restartFromEndBtn" class="btn-primary">
+                        <i class="fas fa-redo mr-2"></i>
+                        Jugar de Nuevo
+                    </button>
+                </div>
+            </div>
+            
+            <div class="bg-white rounded-xl shadow-lg p-4">
+                <div class="flex items-center justify-between text-sm text-gray-600">
+                    <div class="flex items-center gap-4">
+                        <span>
+                            <i class="fas fa-map-marker-alt text-purple-600 mr-1"></i>
+                            Nodo: <span id="currentNodeId" class="font-mono font-semibold">-</span>
+                        </span>
+                        <span>
+                            <i class="fas fa-shoe-prints text-purple-600 mr-1"></i>
+                            Pasos: <span id="stepCount" class="font-semibold">0</span>
+                        </span>
+                    </div>
+                    <div>
+                        <i class="fas fa-clock text-purple-600 mr-1"></i>
+                        Tiempo: <span id="playTime" class="font-semibold">00:00</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <footer class="mt-12 pb-8 text-center text-gray-600 text-sm">
+        <p>LabDigital - Elige tu propia aventura [PLAYER] © 2025</p>
+    </footer>
+<script>
+    // Game State
+let gameData = null
+let currentNodeId = null
+let navigationHistory = []
+let stepCount = 0
+let startTime = null
+let timerInterval = null
+
+// DOM Elements
+const welcomeScreen = document.getElementById("welcomeScreen")
+const gameScreen = document.getElementById("gameScreen")
+const adventureTitle = document.getElementById("adventureTitle")
+const storyText = document.getElementById("storyText")
+const choicesContainer = document.getElementById("choicesContainer")
+const endMessage = document.getElementById("endMessage")
+const currentNodeIdDisplay = document.getElementById("currentNodeId")
+const stepCountDisplay = document.getElementById("stepCount")
+const playTimeDisplay = document.getElementById("playTime")
+
+const backBtn = document.getElementById("backBtn")
+const restartBtn = document.getElementById("restartBtn")
+const loadNewBtn = document.getElementById("loadNewBtn")
+const loadAdventureBtn = document.getElementById("loadAdventureBtn")
+const restartFromEndBtn = document.getElementById("restartFromEndBtn")
+
+// Import necessary libraries
+const Swal = window.Swal // Assuming Swal is available globally
+
+// Initialize
+document.addEventListener("DOMContentLoaded", () => {
+  setupEventListeners()
+  checkForAutoLoad()
+})
+
+function setupEventListeners() {
+  loadAdventureBtn.addEventListener("click", loadAdventure)
+  loadNewBtn.addEventListener("click", loadAdventure)
+  backBtn.addEventListener("click", goBack)
+  restartBtn.addEventListener("click", restartGame)
+  restartFromEndBtn.addEventListener("click", restartGame)
+}
+
+// Check if there's adventure data in URL or localStorage
+function checkForAutoLoad() {
+  const urlParams = new URLSearchParams(window.location.search)
+  const dataParam = urlParams.get("data")
+
+  if (dataParam) {
+    try {
+      const decompressed = LZString.decompressFromEncodedURIComponent(dataParam)
+      if (decompressed) {
+        gameData = JSON.parse(decompressed)
+        startGame()
+      }
+    } catch (error) {
+      console.error("Error loading from URL:", error)
+    }
+  }
+}
+
+// Load Adventure
+async function loadAdventure() {
+  const result = await Swal.fire({
+    title: "Cargar Aventura",
+    html: `
+            <div class="text-left">
+                <label class="block text-sm font-semibold text-gray-700 mb-2">
+                    Pega el código de aventura:
+                </label>
+                <textarea id="adventureCode" class="swal2-textarea w-full h-32 font-mono text-sm" 
+                    placeholder="Pega aquí el código exportado desde el creador..."></textarea>
+            </div>
+        `,
+    showCancelButton: true,
+    confirmButtonText: '<i class="fas fa-check mr-2"></i>Cargar',
+    cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar',
+    customClass: {
+      confirmButton: "btn-primary",
+      cancelButton: "btn-secondary",
+    },
+    buttonsStyling: false,
+    preConfirm: () => {
+      const code = document.getElementById("adventureCode").value.trim()
+      if (!code) {
+        Swal.showValidationMessage("Por favor, pega el código de aventura")
+        return false
+      }
+      return code
+    },
+  })
+
+  if (result.isConfirmed) {
+    try {
+      // Show loading
+      Swal.fire({
+        title: "Cargando aventura...",
+        allowOutsideClick: false,
+        didOpen: () => {
+          Swal.showLoading()
+        },
+      })
+
+      // Decompress the data
+      const decompressed = LZString.decompressFromBase64(result.value)
+
+      if (!decompressed) {
+        throw new Error("No se pudo descomprimir el código")
+      }
+
+      // Parse JSON
+      const data = JSON.parse(decompressed)
+
+      // Validate data structure
+      if (!data.nodes || !Array.isArray(data.nodes) || data.nodes.length === 0) {
+        throw new Error("Formato de aventura inválido")
+      }
+
+      // Check for start node
+      const startNode = data.nodes.find((node) => node.isStart)
+      if (!startNode) {
+        throw new Error("No se encontró un nodo de inicio en la aventura")
+      }
+
+      gameData = data
+
+      Swal.close()
+
+      await Swal.fire({
+        icon: "success",
+        title: "¡Aventura cargada!",
+        text: "La aventura se ha cargado correctamente",
+        timer: 1500,
+        showConfirmButton: false,
+      })
+
+      startGame()
+    } catch (error) {
+      console.error("Error loading adventure:", error)
+      Swal.fire({
+        icon: "error",
+        title: "Error al cargar",
+        text: error.message || "El código de aventura no es válido. Asegúrate de copiar el código completo.",
+        confirmButtonText: "Entendido",
+        customClass: {
+          confirmButton: "btn-primary",
+        },
+        buttonsStyling: false,
+      })
+    }
+  }
+}
+
+// Start Game
+function startGame() {
+  // Find start node
+  const startNode = gameData.nodes.find((node) => node.isStart)
+
+  if (!startNode) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: "No se encontró un nodo de inicio en la aventura",
+      confirmButtonText: "Entendido",
+      customClass: {
+        confirmButton: "btn-primary",
+      },
+      buttonsStyling: false,
+    })
+    return
+  }
+
+  // Reset game state
+  currentNodeId = startNode.id
+  navigationHistory = [startNode.id]
+  stepCount = 0
+  startTime = Date.now()
+
+  // Start timer
+  if (timerInterval) {
+    clearInterval(timerInterval)
+  }
+  timerInterval = setInterval(updateTimer, 1000)
+
+  // Update UI
+  welcomeScreen.style.display = "none"
+  gameScreen.style.display = "block"
+
+  // Set adventure title if exists
+  if (gameData.title) {
+    adventureTitle.querySelector("h2").textContent = gameData.title
+    adventureTitle.style.display = "block"
+  } else {
+    adventureTitle.style.display = "none"
+  }
+
+  // Show current node
+  displayNode(currentNodeId)
+  updateStats()
+  updateNavigationButtons()
+}
+
+// Display Node
+function displayNode(nodeId) {
+  const node = gameData.nodes.find((n) => n.id === nodeId)
+
+  if (!node) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: `No se encontró el nodo con ID: ${nodeId}`,
+      confirmButtonText: "Entendido",
+      customClass: {
+        confirmButton: "btn-primary",
+      },
+      buttonsStyling: false,
+    })
+    return
+  }
+
+  // Display story text
+  storyText.innerHTML = node.text.replace(/\n/g, "<br>")
+
+  // Clear choices
+  choicesContainer.innerHTML = ""
+  endMessage.style.display = "none"
+
+  // Display choices or end message
+  if (node.choices && node.choices.length > 0) {
+    node.choices.forEach((choice, index) => {
+      const button = document.createElement("button")
+      button.className = "choice-btn"
+      button.innerHTML = `
+                <span class="choice-number">${index + 1}</span>
+                <span class="choice-text">${choice.text}</span>
+                <i class="fas fa-arrow-right choice-arrow"></i>
+            `
+      button.addEventListener("click", () => makeChoice(choice.targetId))
+      choicesContainer.appendChild(button)
+    })
+  } else {
+    // No choices - end of story
+    endMessage.style.display = "block"
+    choicesContainer.style.display = "none"
+
+    // Stop timer
+    if (timerInterval) {
+      clearInterval(timerInterval)
+      timerInterval = null
+    }
+  }
+
+  // Scroll to top smoothly
+  window.scrollTo({ top: 0, behavior: "smooth" })
+}
+
+// Make Choice
+function makeChoice(targetId) {
+  const targetNode = gameData.nodes.find((n) => n.id === targetId)
+
+  if (!targetNode) {
+    Swal.fire({
+      icon: "error",
+      title: "Error",
+      text: `El nodo de destino (${targetId}) no existe`,
+      confirmButtonText: "Entendido",
+      customClass: {
+        confirmButton: "btn-primary",
+      },
+      buttonsStyling: false,
+    })
+    return
+  }
+
+  // Add to history
+  navigationHistory.push(targetId)
+  currentNodeId = targetId
+  stepCount++
+
+  // Display new node
+  displayNode(currentNodeId)
+  updateStats()
+  updateNavigationButtons()
+}
+
+// Go Back
+function goBack() {
+  if (navigationHistory.length <= 1) {
+    return
+  }
+
+  // Remove current node from history
+  navigationHistory.pop()
+
+  // Get previous node
+  currentNodeId = navigationHistory[navigationHistory.length - 1]
+
+  // Decrease step count
+  if (stepCount > 0) {
+    stepCount--
+  }
+
+  // Display previous node
+  displayNode(currentNodeId)
+  updateStats()
+  updateNavigationButtons()
+}
+
+// Restart Game
+async function restartGame() {
+  const result = await Swal.fire({
+    title: "¿Reiniciar aventura?",
+    text: "Perderás todo el progreso actual",
+    icon: "warning",
+    showCancelButton: true,
+    confirmButtonText: '<i class="fas fa-redo mr-2"></i>Reiniciar',
+    cancelButtonText: '<i class="fas fa-times mr-2"></i>Cancelar',
+    customClass: {
+      confirmButton: "btn-primary",
+      cancelButton: "btn-secondary",
+    },
+    buttonsStyling: false,
+  })
+
+  if (result.isConfirmed) {
+    startGame()
+  }
+}
+
+// Update Stats
+function updateStats() {
+  currentNodeIdDisplay.textContent = currentNodeId
+  stepCountDisplay.textContent = stepCount
+}
+
+// Update Timer
+function updateTimer() {
+  if (!startTime) return
+
+  const elapsed = Math.floor((Date.now() - startTime) / 1000)
+  const minutes = Math.floor(elapsed / 60)
+  const seconds = elapsed % 60
+
+  playTimeDisplay.textContent = `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`
+}
+
+// Update Navigation Buttons
+function updateNavigationButtons() {
+  // Back button
+  if (navigationHistory.length > 1) {
+    backBtn.style.display = "flex"
+  } else {
+    backBtn.style.display = "none"
+  }
+
+  // Restart button
+  if (gameData) {
+    restartBtn.style.display = "flex"
+  } else {
+    restartBtn.style.display = "none"
+  }
+}
+
+// Keyboard shortcuts
+document.addEventListener("keydown", (e) => {
+  // Only if game is active
+  if (!gameData || welcomeScreen.style.display !== "none") {
+    return
+  }
+
+  // Number keys for choices
+  if (e.key >= "1" && e.key <= "9") {
+    const choiceIndex = Number.parseInt(e.key) - 1
+    const choiceButtons = choicesContainer.querySelectorAll(".choice-btn")
+    if (choiceButtons[choiceIndex]) {
+      choiceButtons[choiceIndex].click()
+    }
+  }
+
+  // Backspace or Left Arrow for back
+  if ((e.key === "Backspace" || e.key === "ArrowLeft") && navigationHistory.length > 1) {
+    e.preventDefault()
+    goBack()
+  }
+
+  // R for restart
+  if (e.key === "r" || e.key === "R") {
+    restartGame()
+  }
+})
+
+// Cleanup on page unload
+window.addEventListener("beforeunload", () => {
+  if (timerInterval) {
+    clearInterval(timerInterval)
+  }
+})
+
+</script>
+</body>
+</html>
