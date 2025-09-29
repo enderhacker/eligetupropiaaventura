@@ -11,6 +11,9 @@
     <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <style>
 	/* Custom styles */
+#choicesList {
+    max-height: 29rem;
+}
 
 .node-item {
   padding: 14px;
@@ -698,9 +701,18 @@ function renderChoicesList(choices) {
       <div class="flex items-center gap-2">
         <i class="fas fa-arrow-right text-gray-400"></i>
         <select class="flex-1 px-3 py-2 border border-gray-300 rounded-lg choice-target text-sm">
-          <option value="">-- Seleccionar nodo destino --</option>
-          ${nodes.map((n) => `<option value="${n.id}" ${n.id === choice.targetId ? "selected" : ""}>${n.id}</option>`).join("")}
-        </select>
+		  <option value="">-- Seleccionar nodo destino --</option>
+		  ${nodes
+			.slice()
+			.sort((a, b) => a.id.localeCompare(b.id))
+			.map(
+			  (n) =>
+				`<option value="${n.id}" ${
+				  n.id === choice.targetId ? "selected" : ""
+				}>${n.id}</option>`
+			)
+			.join("")}
+		</select>
       </div>
     `
 
@@ -1182,24 +1194,33 @@ function renderGraph() {
       container: document.getElementById("graphContainer"),
       style: [
         {
-          selector: "node",
-          style: {
-            "background-color": "#7c3aed",
-            label: "data(label)",
-            color: "#fff",
-            "text-valign": "center",
-            "text-halign": "center",
-            "font-size": "12px",
-            "font-weight": "bold",
-            width: "60px",
-            height: "60px",
-            "text-wrap": "wrap",
-            "text-max-width": "50px",
-            "border-width": 3,
-            "border-color": "#5b21b6",
-          },
-        },
-        {
+			selector: "node",
+				style: {
+					"background-color": "#7c3aed",
+					label: "data(label)",
+					color: "#fff",
+					"text-valign": "center",
+					"text-halign": "center",
+					"font-size": "14px",
+					"font-weight": "bold",
+
+					// Keep circle shape
+					shape: "ellipse",
+
+					// Circle size
+					width: 120,
+					height: 120,
+
+					// Text wrapping inside the circle
+					"text-wrap": "wrap",
+					"text-max-width": 100, // close to circle width
+					"text-overflow-wrap": "anywhere", // forces breaking long words if needed
+
+					"border-width": 3,
+					"border-color": "#5b21b6",
+				},
+			},
+		{
           selector: "node.start",
           style: {
             "background-color": "#10b981",
@@ -1266,7 +1287,7 @@ function renderGraph() {
     elements.push({
       data: {
         id: node.id,
-        label: node.id.length > 10 ? node.id.substring(0, 10) + "..." : node.id,
+        label: node.id.length > 30 ? node.id.substring(0, 30) + "..." : node.id,
       },
       classes: classes.join(" "),
     })
