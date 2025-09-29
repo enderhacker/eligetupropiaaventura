@@ -798,7 +798,25 @@ async function deleteNode() {
   })
 
   if (result.isConfirmed) {
+    // Remove the node
     nodes = nodes.filter((n) => n.id !== currentEditingNodeId)
+
+    // Remove dangling choices pointing to the deleted node
+    nodes.forEach(node => {
+      node.choices = node.choices.filter(c => c.targetId !== currentEditingNodeId);
+    });
+
+    // Check if there's still a start node
+    const hasStart = nodes.some(n => n.isStart)
+    if (!hasStart) {
+      // Find first node with choices that is not referenced by any choice
+      const referencedIds = new Set()
+      nodes.forEach(n => n.choices.forEach(c => referencedIds.add(c.targetId)))
+      
+      const newStart = nodes.find(n => n.choices.length > 0 && !referencedIds.has(n.id))
+      if (newStart) newStart.isStart = true
+    }
+
     triggerAutoSave()
     clearEditor()
     renderGraph()
