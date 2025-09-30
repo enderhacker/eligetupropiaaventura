@@ -1259,7 +1259,14 @@ function renderGraph() {
         padding: 50,
         spacingFactor: 1.5,
       },
-    })
+	  minZoom: 0.1,
+	  maxZoom: 3,
+	  zoomingEnabled: true,
+	  userZoomingEnabled: true,
+	  avoidOverlap: true,
+	  animate: true,
+	  animationDuration: 400,
+	})
 
     cy.on("tap", "node", (evt) => {
       const nodeId = evt.target.id()
@@ -1449,3 +1456,4 @@ document.addEventListener("DOMContentLoaded", () => {
 </script>
 </body>
 </html>
+
